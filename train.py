@@ -5,13 +5,17 @@ from wandb.integration.sb3 import WandbCallback
 from clearml import Task
 from ot2_gym_wrapper import OT2Env
 import subprocess
-subprocess.run(["pip", "install", "--upgrade", "typing_extensions"], check=True)
+import sys
+from clearml import Task
+
+# Ensure the correct typing_extensions version is installed
+subprocess.run([sys.executable, "-m", "pip", "install", "--force-reinstall", "typing_extensions==4.9.0"], check=True)
 
 # ClearML initialization
 task = Task.init(project_name="Mentor Group K/Group 1/MichonGoddijn", task_name="RL_PPO_Experiment")
 task.set_base_docker('deanis/2023y2b-rl:latest')
 task.execute_remotely(queue_name="default")
-task.set_requirements(["pydantic==2.10.3", "typing_extensions==4.9.0"])
+task.set_requirements(["typing_extensions==4.9.0", "pydantic==2.10.3"])
 
 # Weights & Biases initialization
 import wandb
