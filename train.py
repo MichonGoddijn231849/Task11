@@ -4,10 +4,7 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 from wandb.integration.sb3 import WandbCallback
 from clearml import Task
 from ot2_gym_wrapper import OT2Env
-import subprocess
-import sys
 from clearml import Task
-from typing_extensions import Annotated, deprecated
 
 # ClearML initialization
 task = Task.init(project_name="Mentor Group K/Group 1/MichonGoddijn", task_name="RL_PPO_Experiment")
