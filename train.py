@@ -15,7 +15,7 @@ task.execute_remotely(queue_name="default")
 import wandb
 
 wandb.init(
-    project="RL_OT2_Control",
+    project="task11",
     config={
         "learning_rate": 0.0003,
         "n_steps": 2048,
