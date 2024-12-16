@@ -7,6 +7,7 @@ from ot2_gym_wrapper import OT2Env
 import subprocess
 import sys
 from clearml import Task
+from typing_extensions import TypeIs
 
 # Ensure the correct typing_extensions version is installed
 subprocess.run([sys.executable, "-m", "pip", "install", "--force-reinstall", "typing_extensions==4.9.0"], check=True)
