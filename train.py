@@ -7,7 +7,7 @@ from ot2_gym_wrapper import OT2Env
 import subprocess
 import sys
 from clearml import Task
-from typing_extensions import TypeIs
+from typing_extensions import Annotated, deprecated
 
 # ClearML initialization
 task = Task.init(project_name="Mentor Group K/Group 1/MichonGoddijn", task_name="RL_PPO_Experiment")
