@@ -6,6 +6,10 @@ from clearml import Task
 from ot2_gym_wrapper import OT2Env
 from typing_extensions import TypeIs
 import tensorflow
+import os
+
+os.environ['WANDB_API_KEY'] = '76bf2b8cae2c414adb5c3b1292a61d5b3200b733'
+
 
 # ClearML initialization
 task = Task.init(
