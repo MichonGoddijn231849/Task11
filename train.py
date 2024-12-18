@@ -19,7 +19,7 @@ run = wandb.init(project="Task 11", sync_tensorboard=True)
 
 # ClearML task initialization
 task = Task.init(
-    project_name="Mentor Group K/MichonGoddijn",  # Replace YourName with your own name
+    project_name="Mentor Group K/Group 1/MichonGoddijn",  # Replace YourName with your own name
     task_name="Experiment1",
 )
 
