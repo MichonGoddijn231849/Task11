@@ -120,7 +120,7 @@ class CustomWandbCallback(BaseCallback):
 custom_wandb_callback = CustomWandbCallback()
 
 # Total training timesteps per iteration
-time_steps = 5000000
+time_steps = 1000000
 
 # Training loop
 for i in range(10):
