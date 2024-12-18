@@ -19,7 +19,7 @@ run = wandb.init(project="Task 11", sync_tensorboard=True)
 
 # ClearML task initialization
 task = Task.init(
-    project_name="Mentor Group K/Group 1/MichonGoddijn",  # Replace YourName with your own name
+    project_name="Mentor Group K/Group 1/MichonGoddijn",
     task_name="Experiment1",
 )
 
@@ -28,7 +28,7 @@ task.set_base_docker("deanis/2023y2b-rl:latest")
 task.execute_remotely(queue_name="default")
 
 # Wrap the base environment with your custom wrapper
-env = OT2Env()  # Assuming `render` is a parameter in OT2Env
+env = OT2Env()
 
 # Argument parser setup
 parser = argparse.ArgumentParser()
@@ -40,20 +40,20 @@ parser.add_argument("--gamma", type=float, default=0.98, help="Discount factor f
 parser.add_argument("--value_coefficient", type=float, default=0.5, help="Value function loss coefficient")
 parser.add_argument("--clip_range", type=float, default=0.2, help="Clipping range for PPO updates")
 parser.add_argument("--policy", type=str, default="MlpPolicy", help="Policy architecture to use in PPO")
-args, unknown = parser.parse_known_args()  # Handles Jupyter environments gracefully
+args, unknown = parser.parse_known_args()
 
 # Initialize the PPO model with updated hyperparameters
 model = PPO(
-    policy=args.policy,  # MlpPolicy (JASON)
+    policy=args.policy,
     env=env,
     verbose=1,
-    learning_rate=args.learning_rate,  # 0.0001 (ALEXI)
-    batch_size=args.batch_size,        # 32 (MICHON)
-    n_steps=args.n_steps,              # 2048 (DAN)
-    n_epochs=args.n_epochs,            # 10 (MICHON)
-    gamma=args.gamma,                  # 0.98 (ALEXI)
-    vf_coef=args.value_coefficient,    # 0.5 (DAN)
-    clip_range=args.clip_range,        # 0.2 (JASON)
+    learning_rate=args.learning_rate,
+    batch_size=args.batch_size,
+    n_steps=args.n_steps,
+    n_epochs=args.n_epochs,
+    gamma=args.gamma,
+    vf_coef=args.value_coefficient,
+    clip_range=args.clip_range,
     tensorboard_log=f"runs/{run.id}",
 )
 
@@ -63,61 +63,41 @@ os.makedirs(model_dir, exist_ok=True)
 
 # Create wandb callback
 wandb_callback = WandbCallback(
-    model_save_freq=1000,
-    model_save_path=model_dir,  # Save models to the specific directory
+    model_save_freq=100000,  # Save every 100,000 steps
+    model_save_path=model_dir,
     verbose=2
 )
 
-# Define a custom callback for logging metrics and printing rewards
-class CustomWandbCallback(BaseCallback):
+# Custom callback to save the best model
+class SaveBestModelCallback(BaseCallback):
     def __init__(self, verbose=0):
-        super(CustomWandbCallback, self).__init__(verbose)
-        self.episode_rewards = []
-        self.episode_lengths = []
-        self.success_rate = []
+        super(SaveBestModelCallback, self).__init__(verbose)
+        self.best_mean_reward = -np.inf
+        self.best_model_path = os.path.join(model_dir, "best_model")
 
     def _on_step(self) -> bool:
-        # Collect episode rewards and lengths
-        if 'episode' in self.locals:
-            episode_info = self.locals['infos'][0].get('episode', {})
-            if 'r' in episode_info:  # Episode reward
-                self.episode_rewards.append(episode_info['r'])
-                wandb.log({"episode_reward": episode_info['r']}, step=self.num_timesteps)
-                print(f"Episode Reward: {episode_info['r']}")  # Output reward to console
-            if 'l' in episode_info:  # Episode length
-                self.episode_lengths.append(episode_info['l'])
-                wandb.log({"episode_length": episode_info['l']}, step=self.num_timesteps)
-
-        # Success rate logging (if defined in your environment's info)
-        success = self.locals['infos'][0].get('success', None)
-        if success is not None:
-            self.success_rate.append(success)
-            wandb.log({"success_rate": np.mean(self.success_rate)}, step=self.num_timesteps)
-
-        # Log entropy (policy exploration)
-        entropy = self.model.logger.name_to_value.get('entropy', None)
-        if entropy is not None:
-            wandb.log({"entropy": entropy}, step=self.num_timesteps)
-
-        # Log learning rate
-        wandb.log({"learning_rate": self.model.learning_rate}, step=self.num_timesteps)
+        # Log episode rewards to check for the best model
+        if "episode" in self.locals:
+            episode_info = self.locals["infos"][0].get("episode", {})
+            if "r" in episode_info:
+                mean_reward = np.mean(episode_info["r"])
+                wandb.log({"mean_reward": mean_reward}, step=self.num_timesteps)
+                
+                # Save the best model
+                if mean_reward > self.best_mean_reward:
+                    self.best_mean_reward = mean_reward
+                    print(f"New best mean reward: {mean_reward}. Saving model...")
+                    self.model.save(self.best_model_path)
+                    wandb.log({"best_mean_reward": mean_reward}, step=self.num_timesteps)
 
         return True
 
     def _on_training_end(self) -> None:
-        # Log aggregate statistics at the end of training
-        wandb.log({
-            "average_episode_reward": np.mean(self.episode_rewards),
-            "average_episode_length": np.mean(self.episode_lengths),
-            "final_success_rate": np.mean(self.success_rate)
-        })
-        print(f"Training Completed. Final Metrics:")
-        print(f"Average Episode Reward: {np.mean(self.episode_rewards)}")
-        print(f"Average Episode Length: {np.mean(self.episode_lengths)}")
-        print(f"Final Success Rate: {np.mean(self.success_rate)}")
+        # Upload the best model to WandB
+        print(f"Uploading the best model with mean reward: {self.best_mean_reward}")
+        wandb.save(f"{self.best_model_path}.zip")
 
-# Add the custom callback to the training process
-custom_wandb_callback = CustomWandbCallback()
+save_best_callback = SaveBestModelCallback()
 
 # Total training timesteps per iteration
 time_steps = 6000000
@@ -129,7 +109,7 @@ for i in range(10):
     # Train the model and log data
     model.learn(
         total_timesteps=time_steps,
-        callback=[wandb_callback, custom_wandb_callback],  # Include both callbacks
+        callback=[wandb_callback, save_best_callback],
         progress_bar=True,
         reset_num_timesteps=False,
         tb_log_name=f"runs/{run.id}"
