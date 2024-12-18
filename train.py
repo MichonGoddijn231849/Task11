@@ -11,6 +11,7 @@ import tensorflow
 from stable_baselines3.common.callbacks import BaseCallback
 import numpy as np
 
+# Set the API key for wandb
 os.environ['WANDB_API_KEY'] = "76bf2b8cae2c414adb5c3b1292a61d5b3200b733"
 
 # Initialize wandb project
@@ -26,34 +27,33 @@ task = Task.init(
 task.set_base_docker("deanis/2023y2b-rl:latest")
 task.execute_remotely(queue_name="default")
 
-# Wrap the base environment with your custom wrapper (disable rendering during training)
+# Wrap the base environment with your custom wrapper
 env = OT2Env()  # Assuming `render` is a parameter in OT2Env
 
 # Argument parser setup
 parser = argparse.ArgumentParser()
 parser.add_argument("--learning_rate", type=float, default=0.0001, help="Learning rate for the PPO model")
 parser.add_argument("--batch_size", type=int, default=32, help="Batch size for the PPO model")
-parser.add_argument("--n_steps", type=int, default=550000, help="Number of steps per PPO update")
+parser.add_argument("--n_steps", type=int, default=2048, help="Number of steps per PPO update")
 parser.add_argument("--n_epochs", type=int, default=10, help="Number of epochs for PPO optimization")
 parser.add_argument("--gamma", type=float, default=0.98, help="Discount factor for future rewards")
-parser.add_argument("--gae_lambda", type=float, default=0.9, help="GAE lambda parameter for PPO")
 parser.add_argument("--value_coefficient", type=float, default=0.5, help="Value function loss coefficient")
-parser.add_argument("--target_kl", type=float, default=0.02, help="Target KL divergence threshold")
+parser.add_argument("--clip_range", type=float, default=0.2, help="Clipping range for PPO updates")
+parser.add_argument("--policy", type=str, default="MlpPolicy", help="Policy architecture to use in PPO")
 args, unknown = parser.parse_known_args()  # Handles Jupyter environments gracefully
 
 # Initialize the PPO model with updated hyperparameters
 model = PPO(
-    "MlpPolicy",
-    env,
+    policy=args.policy,  # MlpPolicy (JASON)
+    env=env,
     verbose=1,
-    learning_rate=args.learning_rate,
-    batch_size=args.batch_size,
-    n_steps=args.n_steps,
-    n_epochs=args.n_epochs,
-    gamma=args.gamma,
-    gae_lambda=args.gae_lambda,
-    vf_coef=args.value_coefficient,  # Value function loss coefficient
-    target_kl=args.target_kl,  # Target KL divergence
+    learning_rate=args.learning_rate,  # 0.0001 (ALEXI)
+    batch_size=args.batch_size,        # 32 (MICHON)
+    n_steps=args.n_steps,              # 2048 (DAN)
+    n_epochs=args.n_epochs,            # 10 (MICHON)
+    gamma=args.gamma,                  # 0.98 (ALEXI)
+    vf_coef=args.value_coefficient,    # 0.5 (DAN)
+    clip_range=args.clip_range,        # 0.2 (JASON)
     tensorboard_log=f"runs/{run.id}",
 )
 
@@ -120,7 +120,7 @@ class CustomWandbCallback(BaseCallback):
 custom_wandb_callback = CustomWandbCallback()
 
 # Total training timesteps per iteration
-time_steps = 100000
+time_steps = 5000000
 
 # Training loop
 for i in range(10):
