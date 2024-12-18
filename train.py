@@ -4,18 +4,22 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 from wandb.integration.sb3 import WandbCallback
 from clearml import Task
 from ot2_gym_wrapper import OT2Env
-from clearml import Task
+from typing_extensions import TypeIs
+import tensorflow
 
 # ClearML initialization
-task = Task.init(project_name="Mentor Group K/Group 1/MichonGoddijn", task_name="RL_PPO_Experiment")
-task.set_base_docker('deanis/2023y2b-rl:latest')
+task = Task.init(
+    project_name="Mentor Group K/Group 1/MichonGoddijn",
+    task_name="RL_PPO_Experiment"
+)
+task.set_base_docker("deanis/2023y2b-rl:latest")
 task.execute_remotely(queue_name="default")
 
 # Weights & Biases initialization
 import wandb
 
 wandb.init(
-    project="task11",
+    project="RL_OT2_Control",
     config={
         "learning_rate": 0.0003,
         "n_steps": 2048,
